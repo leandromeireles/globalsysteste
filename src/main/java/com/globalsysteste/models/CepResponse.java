@@ -26,8 +26,6 @@ public class CepResponse implements Serializable {
 
 	public static final String MSG_ERROR = "Erro ao buscar cep";
 
-	private Cep cep;
-
 	public String getCod() {
 		return cod;
 	}
@@ -50,14 +48,6 @@ public class CepResponse implements Serializable {
 
 	public void setLojaFisica(String lojaFisica) {
 		this.lojaFisica = lojaFisica;
-	}
-
-	public Cep getCep() {
-		return cep;
-	}
-
-	public void setCep(Cep cep) {
-		this.cep = cep;
 	}
 
 }
