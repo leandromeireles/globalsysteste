@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -14,10 +13,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
 import com.globalsysteste.models.Cep;
+import com.globalsysteste.models.CepResponse;
 import com.globalsysteste.repository.CepRepository;
 
 import io.swagger.annotations.Api;
@@ -47,19 +46,22 @@ public class CepResource extends ResponseEntityExceptionHandler {
 		try {
 			Cep cepGet = new Cep();
 			cepGet = betweenCep(cep);
+			CepResponse cepResponse = new CepResponse();
 
 			if (cepGet == null) {
 
-				String error = "Cep não esta em area de cobertura";
+				cepResponse.setCod(CepResponse.STATUS_204);
+				cepResponse.setMessage(CepResponse.MSG_204_GET);
+				return cepResponse;
+			}
+			cepResponse.setCod(CepResponse.STATUS_201_SUCCESS);
+			cepResponse.setMessage(CepResponse.MSG_201_GET);
+			cepResponse.setLojaFisica(cepGet.getCodLoja());
 
-
-				return new HttpClientErrorException(HttpStatus.NOT_FOUND , error);
-			}			
-			
-			return cepGet;
+			return cepResponse;
 		} catch (Exception e) {
 
-			throw new Exception("Erro ao buscar cep.", e);
+			throw new Exception(CepResponse.MSG_ERROR, e);
 
 		}
 
@@ -70,6 +72,8 @@ public class CepResource extends ResponseEntityExceptionHandler {
 	public Object salvaCep(@RequestBody Cep cep) throws Exception {
 
 		try {
+
+			CepResponse cepResponse = new CepResponse();
 			List<Cep> cepGet = new ArrayList<>();
 			cepGet = cepRepository.findAll();
 
@@ -78,19 +82,21 @@ public class CepResource extends ResponseEntityExceptionHandler {
 				return cepRepository.save(cep);
 			}
 
-			if (!between(cep)) {
+			if (between(cep)) {
 
-				String error = "Cep ja esta em area de cobertura";
+				cepResponse.setCod(CepResponse.STATUS_201_SUCCESS);
 
-				return new HttpClientErrorException(HttpStatus.NOT_FOUND , error);
+				return cepRepository.save(cep);
 
-							}
+			}
 
-			return cepRepository.save(cep);
+			cepResponse.setCod(CepResponse.STATUS_204);
+			cepResponse.setMessage(CepResponse.MSG_204_POST);
+			return cepResponse;
+
 		} catch (Exception e) {
 
-			throw new Exception("Erro ao persistir objeto.", e);
-
+			throw new Exception(CepResponse.MSG_ERROR, e);
 		}
 
 	}
@@ -108,6 +114,7 @@ public class CepResource extends ResponseEntityExceptionHandler {
 	public Object atualizaCep(@RequestBody Cep cep) throws Exception {
 
 		try {
+			CepResponse cepResponse = new CepResponse();
 			List<Cep> cepGet = new ArrayList<>();
 			cepGet = cepRepository.findAll();
 
@@ -116,36 +123,41 @@ public class CepResource extends ResponseEntityExceptionHandler {
 				return cepRepository.save(cep);
 			}
 
-			if (!between(cep)) {
+			if (between(cep)) {
 
-				String error = "Cep ja esta em area de cobertura";
+				return cepRepository.save(cep);
 
-				return new HttpClientErrorException(HttpStatus.NOT_FOUND , error);
 			}
+			cepResponse.setCod(CepResponse.STATUS_204);
+			cepResponse.setMessage(CepResponse.MSG_204_POST);
+			return cepResponse;
 
-			return cepRepository.save(cep);
 		} catch (Exception e) {
 
-			throw new Exception("Erro ao persistir objeto.", e);
+			throw new Exception(CepResponse.MSG_ERROR, e);
 
 		}
 	}
 
 	private boolean between(Cep cep) {
 
-		List<Cep> listaCep = new ArrayList<>();
+		List<Cep> listaCepStart = new ArrayList<>();
+		List<Cep> listaCepEnd = new ArrayList<>();
 
-		listaCep = cepRepository.findByStarCepBetween(cep.getFaixaInicio(), cep.getFaixaFim());
+		listaCepStart = cepRepository.findByStarCepBetween(cep.getFaixaInicio(), cep.getFaixaFim());
+		listaCepEnd = cepRepository.findByStarCepBetween(cep.getFaixaInicio(), cep.getFaixaFim());
 
-		if (listaCep.isEmpty()) {
+		if (listaCepStart.isEmpty() && listaCepEnd.isEmpty()) {
 
 			return true;
+
 		} else {
 
 			return false;
 		}
 
 	}
+
 	private Cep betweenCep(int cep) {
 
 		Cep cepFind = new Cep();
